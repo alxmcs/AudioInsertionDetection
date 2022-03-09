@@ -1,4 +1,5 @@
 import librosa
+import argparse
 import numpy as np
 from datetime import datetime
 from skimage import transform
@@ -8,6 +9,7 @@ from matplotlib import pyplot as plt
 # window and hop parameters from https://arxiv.org/pdf/2007.11154.pdf
 WINDOW_SIZES = [25, 50, 100]
 HOP_SIZES = [10, 25, 50]
+METHODS = ['guzhov', 'palanisamy']
 # paper uses milliseconds, librosa uses STFT bins
 recalculate_from_ms_to_bins = np.vectorize(lambda ms, sr: int(round(ms * sr / 1000)))
 
@@ -38,9 +40,9 @@ def preprocess_audio(audio, sr, type):
     window_length = recalculate_from_ms_to_bins(WINDOW_SIZES, sr)
     hop_length = recalculate_from_ms_to_bins(HOP_SIZES, sr)
     ch0 = calculate_melspectrogram(audio, sr, hop_length[0], window_length[0])
-    if type == 'guzhov':  # from https://arxiv.org/pdf/2004.07301.pdf and https://arxiv.org/pdf/2007.11154.pdf
+    if type == METHODS[0]:  # from https://arxiv.org/pdf/2004.07301.pdf and https://arxiv.org/pdf/2007.11154.pdf
         return np.dstack((ch0, ch0, ch0))
-    elif type == 'palanisamy':  # from https://arxiv.org/pdf/2007.11154.pdf
+    elif type == METHODS[1]:  # from https://arxiv.org/pdf/2007.11154.pdf
         ch1 = calculate_melspectrogram(audio, sr, hop_length[1], window_length[1])
         ch2 = calculate_melspectrogram(audio, sr, hop_length[2], window_length[2])
         ch1 = transform.resize(ch1, ch0.shape)
@@ -48,7 +50,7 @@ def preprocess_audio(audio, sr, type):
         return np.dstack((ch0, ch1, ch2))
     else:
         raise ValueError(
-            f"{datetime.now}: Unsupported type of audio preprocessing type. Supported types are 'palanisamy' and 'guzhov'.")
+            f"{datetime.now()}: Unsupported type of audio preprocessing type. Supported types are {METHODS}.")
 
 
 def display_data_portion(data):
@@ -57,19 +59,26 @@ def display_data_portion(data):
     :param data: three-channel log melspectrogram
     :return: window with the channel-wise display of the data portion
     """
-    fig = plt.figure(figsize=(30, 5))
+    fig = plt.figure(figsize=(15, 5))
     fig.add_subplot(1, 3, 1)
-    imshow(data[0:127, 0:127, 0])
+    imshow(data[0:128, 0:128, 0])
     fig.add_subplot(1, 3, 2)
-    imshow(data[0:127, 0:127, 1])
+    imshow(data[0:128, 0:128, 1])
     fig.add_subplot(1, 3, 3)
-    imshow(data[0:127, 0:127, 2])
+    imshow(data[0:128, 0:128, 2])
     plt.show()
-    
+
 
 if __name__ == "__main__":
-    a, sr = librosa.load(librosa.ex('trumpet'))
-    data_guz = preprocess_audio(a, sr, 'guzhov')
-    data_pal = preprocess_audio(a, sr, 'palanisamy')
-    display_data_portion(data_guz)
-    display_data_portion(data_pal)
+    parser = argparse.ArgumentParser(description="audio preprocessing script")
+    parser.add_argument("-a", dest="audio", type=str, help="path to an audio file")
+    parser.add_argument("-p", dest="preproc", type=str, choices=METHODS, default='palanisamy', help="name of the "
+                                                                                                    "preprocessing "
+                                                                                                    "method")
+    args = parser.parse_args()
+    if args.audio:
+        a, sr = librosa.load(args.audio)
+    else:
+        a, sr = librosa.load(librosa.ex('trumpet'))
+    res = preprocess_audio(a, sr, args.preproc)
+    display_data_portion(res)
