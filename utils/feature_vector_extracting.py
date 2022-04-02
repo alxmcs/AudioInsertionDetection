@@ -73,8 +73,8 @@ if __name__ == "__main__":
     if args.audio:
         a, sr = librosa.load(args.audio)
     else:
-        a, sr = librosa.load(r'C:\Users\stron\Documents\GitHub\docs\musicDS\170439__argande102__wind-on-microphone.mp3')
-        print(librosa.ex('trumpet'))
+        a, sr = librosa.load(librosa.ex('trumpet'))
+        print(type(a))
 
     preproc_audio = tf.expand_dims(preprocess_audio(a, sr, args.preproc)[:, 0:128, :], axis=0)
     vector = fem.get_feature_vectors(preproc_audio)
