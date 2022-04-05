@@ -21,5 +21,7 @@ def display_results(same_pairs_distance, different_pairs_distance):
 
 if __name__== "__main__":
     same = np.random.ranf(10)
+    print(type(same))
+    print(same)
     different = np.random.ranf(10)
     display_results(same, different)

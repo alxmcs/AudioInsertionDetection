@@ -10,6 +10,7 @@ from audio_preprocessing import preprocess_audio, METHODS
 from keras.applications.resnet import ResNet50
 from keras.applications.densenet import DenseNet121
 from keras.applications.inception_v3 import InceptionV3
+from distance_visualization import display_results
 
 MODELS = ['ResNet', 'DenseNet', 'Inception']
 SHAPE = (128, 128, 3)
@@ -83,30 +84,38 @@ def vector_gener(audio, preproc):
     else:
         fem = FeatureExtractionModel(weights=args.weights)
     a, sr = loader(audio, args)
-    data = np.ndarray([])
-    result = np.ndarray([])
-    dist = int(len(a)/11)
-    temp = any
-    for iter1 in range(10):
-        ind = 0
-        for iter2 in range(iter1*dist, iter_chk(iter1, dist, len(a)), 1) :
-            data[iter2] = a[iter2]
-            ind+=1
-        print('Дата')
-        print(ind)
-        print(data)
-        preproc_audio = tf.expand_dims(preprocess_audio(data, sr, args.preproc)[:, 0:128, :], axis=0)
+    temp_spectr = preprocess_audio(a, sr, args.preproc)
+    spectrogram = np.pad(temp_spectr, ((0,0),(0, 128 - (temp_spectr.shape[1])%128),(0,0)),'empty')
+    segments = [spectrogram[:,y:y+128,:] for y in range(0,spectrogram.shape[1],128)]
+    res_arr = []
+    for t in range(15):
+        preproc_audio = tf.expand_dims(segments[t], axis=0)
         vector = fem.get_feature_vectors(preproc_audio)
-        result[iter1] = vector
         print(f'{datetime.now()}: got {vector.shape[1]}-dimensional vector from {args.model if args.model else MODELS[0]}')
-    return result
-
+        res_arr.insert(t, vector)
+    return res_arr
 
 if __name__ == "__main__":
     # these two lines are needed to run inference on my dated gtx 1660 ti
     physical_devices = tf.config.experimental.list_physical_devices('GPU')
     ##tf.config.experimental.set_memory_growth(physical_devices[0], True)
     # the following is an example of extracting a feature vector from a single 128*128 spectrogram piece
-    
-    print(vector_gener(r'C:\Users\stron\Documents\GitHub\docs\musicDS\158340_bpt10zbu_fr-157.ogg', args, False))
-    
+    arr_1st_method_1 = vector_gener(r'C:\Users\stron\Documents\GitHub\docs\musicDS\170439_argande102_wind-on-microphone.ogg', 'guzhov')
+    arr_2nd_method_1 = vector_gener(r'C:\Users\stron\Documents\GitHub\docs\musicDS\170439_argande102_wind-on-microphone.ogg', False)
+    arr_1st_method_2 = vector_gener(r'C:\Users\stron\Documents\GitHub\docs\musicDS\401275_inspectorj_rain-moderate-c.ogg', 'guzhov')
+    arr_2nd_method_2 = vector_gener(r'C:\Users\stron\Documents\GitHub\docs\musicDS\401275_inspectorj_rain-moderate-c.ogg', False)
+    met1_1 = []
+    met1_2 = []
+    met2_1 = []
+    met2_2 = []
+    for n in range(11):
+        if n <= 10:
+            met1_1.append(np.linalg.norm(arr_1st_method_1[n]-arr_1st_method_1[n+1]))
+            met1_1.append(np.linalg.norm(arr_1st_method_2[n]-arr_1st_method_2[n+1]))
+            met1_2.append(np.linalg.norm(arr_1st_method_1[n]-arr_1st_method_2[n]))
+            met2_2.append(np.linalg.norm(arr_2nd_method_1[n]-arr_2nd_method_2[n]))
+            met2_1.append(np.linalg.norm(arr_2nd_method_1[n]-arr_2nd_method_1[n+1]))
+            met2_1.append(np.linalg.norm(arr_2nd_method_2[n]-arr_2nd_method_2[n+1]))
+    print(type(met1_1))
+    display_results(np.ndarray(0, met1_1),np.ndarray(0, met1_2)) ##первый метод
+    display_results(np.ndarray(0, met2_1),np.ndarray(0, met2_2)) ##второй метод
