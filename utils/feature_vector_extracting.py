@@ -1,7 +1,9 @@
+import csv
 from msilib import sequence
 import librosa
 import argparse
 import numpy as np
+import openpyxl
 import tensorflow as tf
 from datetime import datetime
 from keras import models
@@ -119,5 +121,23 @@ if __name__ == "__main__":
     print(met1_1.shape)
     print(type(met1_1))
     print(met1_1)
+
+    book = openpyxl.Workbook()
+    sheet_1 = book.create_sheet("1 метод, пара из одной записи", 0)
+    for i in range(0, len(met1_1)):
+        sheet_1.append([i+1, met1_1[i]])
+
+    sheet_2 = book.create_sheet("1 метод, пары из разных записей", 0)
+    for i in range(0, len(met1_2)):
+        sheet_2.append([i+1, met1_2[i]])
+
+    sheet_3 = book.create_sheet("2 метод, пара из одной записи", 0)
+    for i in range(0, len(met2_1)):
+        sheet_3.append([i+1, met2_1[i]])
+
+    sheet_4 = book.create_sheet("2 метод, пара из разных записей", 0)
+    for i in range(0, len(met2_2)):
+        sheet_4.append([i+1, met2_2[i]])
+    book.save("results.xlsx")
     display_results(met1_1, met1_2) ##первый метод
     display_results(met2_1, met2_2) ##второй метод
