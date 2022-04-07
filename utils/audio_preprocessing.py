@@ -84,4 +84,5 @@ if __name__ == "__main__":
     else:
         a, sr = librosa.load(librosa.ex('trumpet'))
     res = preprocess_audio(a, sr, args.preproc)
-    display_data_portion(res)
+    display_data_portion(preprocess_audio(a, sr, args.preproc))
+    display_data_portion(preprocess_audio(a, sr, 'guzhov'))

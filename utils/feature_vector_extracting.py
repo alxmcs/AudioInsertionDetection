@@ -1,7 +1,9 @@
+import csv
 from msilib import sequence
 import librosa
 import argparse
 import numpy as np
+import openpyxl
 import tensorflow as tf
 from datetime import datetime
 from keras import models
@@ -104,18 +106,38 @@ if __name__ == "__main__":
     arr_2nd_method_1 = vector_gener(r'C:\Users\stron\Documents\GitHub\docs\musicDS\170439_argande102_wind-on-microphone.ogg', False)
     arr_1st_method_2 = vector_gener(r'C:\Users\stron\Documents\GitHub\docs\musicDS\401275_inspectorj_rain-moderate-c.ogg', 'guzhov')
     arr_2nd_method_2 = vector_gener(r'C:\Users\stron\Documents\GitHub\docs\musicDS\401275_inspectorj_rain-moderate-c.ogg', False)
-    met1_1 = []
-    met1_2 = []
-    met2_1 = []
-    met2_2 = []
+    met1_1 = np.array([])
+    met1_2 = np.array([])
+    met2_1 = np.array([])
+    met2_2 = np.array([])
     for n in range(11):
         if n <= 10:
-            met1_1.append(np.linalg.norm(arr_1st_method_1[n]-arr_1st_method_1[n+1]))
-            met1_1.append(np.linalg.norm(arr_1st_method_2[n]-arr_1st_method_2[n+1]))
-            met1_2.append(np.linalg.norm(arr_1st_method_1[n]-arr_1st_method_2[n]))
-            met2_2.append(np.linalg.norm(arr_2nd_method_1[n]-arr_2nd_method_2[n]))
-            met2_1.append(np.linalg.norm(arr_2nd_method_1[n]-arr_2nd_method_1[n+1]))
-            met2_1.append(np.linalg.norm(arr_2nd_method_2[n]-arr_2nd_method_2[n+1]))
+            met1_1 = np.append(met1_1, np.linalg.norm(arr_1st_method_1[n]-arr_1st_method_1[n+1]))
+            met1_1 = np.append(met1_1, np.linalg.norm(arr_1st_method_2[n]-arr_1st_method_2[n+1]))
+            met1_2 = np.append(met1_2, np.linalg.norm(arr_1st_method_1[n]-arr_1st_method_2[n]))
+            met2_2 = np.append(met2_2, np.linalg.norm(arr_2nd_method_1[n]-arr_2nd_method_2[n]))
+            met2_1 = np.append(met2_1, np.linalg.norm(arr_2nd_method_1[n]-arr_2nd_method_1[n+1]))
+            met2_1 = np.append(met2_1, np.linalg.norm(arr_2nd_method_2[n]-arr_2nd_method_2[n+1]))
+    print(met1_1.shape)
     print(type(met1_1))
-    display_results(np.ndarray(0, met1_1),np.ndarray(0, met1_2)) ##первый метод
-    display_results(np.ndarray(0, met2_1),np.ndarray(0, met2_2)) ##второй метод
+    print(met1_1)
+
+    book = openpyxl.Workbook()
+    sheet_1 = book.create_sheet("1 метод, пара из одной записи", 0)
+    for i in range(0, len(met1_1)):
+        sheet_1.append([i+1, met1_1[i]])
+
+    sheet_2 = book.create_sheet("1 метод, пары из разных записей", 0)
+    for i in range(0, len(met1_2)):
+        sheet_2.append([i+1, met1_2[i]])
+
+    sheet_3 = book.create_sheet("2 метод, пара из одной записи", 0)
+    for i in range(0, len(met2_1)):
+        sheet_3.append([i+1, met2_1[i]])
+
+    sheet_4 = book.create_sheet("2 метод, пара из разных записей", 0)
+    for i in range(0, len(met2_2)):
+        sheet_4.append([i+1, met2_2[i]])
+    book.save("results.xlsx")
+    display_results(met1_1, met1_2) ##первый метод
+    display_results(met2_1, met2_2) ##второй метод
