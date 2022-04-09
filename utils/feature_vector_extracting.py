@@ -1,17 +1,15 @@
-import csv
-from msilib import sequence
 import librosa
 import argparse
 import numpy as np
 import openpyxl
 import tensorflow as tf
 from datetime import datetime
-from keras import models
-from keras.layers import Input
+from tensorflow.keras import models
+from tensorflow.keras.layers import Input
 from audio_preprocessing import preprocess_audio, METHODS
-from keras.applications.resnet import ResNet50
-from keras.applications.densenet import DenseNet121
-from keras.applications.inception_v3 import InceptionV3
+from tensorflow.keras.applications.resnet import ResNet50
+from tensorflow.keras.applications.densenet import DenseNet121
+from tensorflow.keras.applications.inception_v3 import InceptionV3
 from distance_visualization import display_results
 
 MODELS = ['ResNet', 'DenseNet', 'Inception']
@@ -22,6 +20,7 @@ class FeatureExtractionModel:
     """
     a sample class to utilize pretrained fine-tuned tf models
     """
+
     def __init__(self, name=MODELS[0], weights='imagenet'):
         """
         initializes a model
@@ -54,24 +53,24 @@ class FeatureExtractionModel:
         if self.__validate_data(data):
             return self.model.predict(data)
 
-def loader(audio, args):
-    args.audio = audio
-    if args.audio:
-        a, sr = librosa.load(args.audio)
-    else:
-        a, sr = librosa.load(librosa.ex('trumpet'))
-    
-    return a, sr
 
-def iter_chk(iter, data, length):
-    if iter == 10:
-        iter = length
-    else:
-        iter = iter*data 
-    return iter
+def load_audio(path):
+    return librosa.load(path)
 
-def vector_gener(audio, preproc):
+
+def process_audio(audio, rate, preproc, model=MODELS[0], weights='imagenet'):
+    fem = FeatureExtractionModel(model, weights)
+    preprocessed = preprocess_audio(audio, rate, preproc)
+    spectrogram = np.pad(preprocessed, ((0, 0), (0, 128 - (preprocessed.shape[1]) % 128), (0, 0)), 'empty')
+    segments = [spectrogram[:, y:y + 128, :] for y in range(0, spectrogram.shape[1], 64)]
+    result = fem.get_feature_vectors(np.stack(segments[0: 20]))
+    print(f'{datetime.now()}: got {result.shape[0]} {result[0].shape[0]}-dimensional vectors from {model}')
+    return result
+
+
+if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="feature vector extracting script")
+    parser.add_argument("-r", dest="research", action='store_true', help="runs preset research if provided")
     parser.add_argument("-m", dest="model", type=str, choices=MODELS, help="name of the model to use")
     parser.add_argument("-w", dest="weights", type=str, default='imagenet', help="path to the model weights")
     parser.add_argument("-a", dest="audio", type=str, help="path to an audio file")
@@ -79,65 +78,44 @@ def vector_gener(audio, preproc):
                                                                                                     "preprocessing "
                                                                                                     "method")
     args = parser.parse_args()
-    if preproc is not False:
-        args.preproc = preproc
-    if args.model:
-        fem = FeatureExtractionModel(args.model, args.weights)
-    else:
-        fem = FeatureExtractionModel(weights=args.weights)
-    a, sr = loader(audio, args)
-    temp_spectr = preprocess_audio(a, sr, args.preproc)
-    spectrogram = np.pad(temp_spectr, ((0,0),(0, 128 - (temp_spectr.shape[1])%128),(0,0)),'empty')
-    segments = [spectrogram[:,y:y+128,:] for y in range(0,spectrogram.shape[1],128)]
-    res_arr = []
-    for t in range(15):
-        preproc_audio = tf.expand_dims(segments[t], axis=0)
-        vector = fem.get_feature_vectors(preproc_audio)
-        print(f'{datetime.now()}: got {vector.shape[1]}-dimensional vector from {args.model if args.model else MODELS[0]}')
-        res_arr.insert(t, vector)
-    return res_arr
 
-if __name__ == "__main__":
     # these two lines are needed to run inference on my dated gtx 1660 ti
     physical_devices = tf.config.experimental.list_physical_devices('GPU')
-    ##tf.config.experimental.set_memory_growth(physical_devices[0], True)
-    # the following is an example of extracting a feature vector from a single 128*128 spectrogram piece
-    arr_1st_method_1 = vector_gener(r'C:\Users\stron\Documents\GitHub\docs\musicDS\170439_argande102_wind-on-microphone.ogg', 'guzhov')
-    arr_2nd_method_1 = vector_gener(r'C:\Users\stron\Documents\GitHub\docs\musicDS\170439_argande102_wind-on-microphone.ogg', False)
-    arr_1st_method_2 = vector_gener(r'C:\Users\stron\Documents\GitHub\docs\musicDS\401275_inspectorj_rain-moderate-c.ogg', 'guzhov')
-    arr_2nd_method_2 = vector_gener(r'C:\Users\stron\Documents\GitHub\docs\musicDS\401275_inspectorj_rain-moderate-c.ogg', False)
-    met1_1 = np.array([])
-    met1_2 = np.array([])
-    met2_1 = np.array([])
-    met2_2 = np.array([])
-    for n in range(11):
-        if n <= 10:
-            met1_1 = np.append(met1_1, np.linalg.norm(arr_1st_method_1[n]-arr_1st_method_1[n+1]))
-            met1_1 = np.append(met1_1, np.linalg.norm(arr_1st_method_2[n]-arr_1st_method_2[n+1]))
-            met1_2 = np.append(met1_2, np.linalg.norm(arr_1st_method_1[n]-arr_1st_method_2[n]))
-            met2_2 = np.append(met2_2, np.linalg.norm(arr_2nd_method_1[n]-arr_2nd_method_2[n]))
-            met2_1 = np.append(met2_1, np.linalg.norm(arr_2nd_method_1[n]-arr_2nd_method_1[n+1]))
-            met2_1 = np.append(met2_1, np.linalg.norm(arr_2nd_method_2[n]-arr_2nd_method_2[n+1]))
-    print(met1_1.shape)
-    print(type(met1_1))
-    print(met1_1)
+    tf.config.experimental.set_memory_growth(physical_devices[0], True)
 
-    book = openpyxl.Workbook()
-    sheet_1 = book.create_sheet("1 метод, пара из одной записи", 0)
-    for i in range(0, len(met1_1)):
-        sheet_1.append([i+1, met1_1[i]])
+    if args.research:
+        net_model = 'DenseNet'
+        audio1, sr1 = load_audio('../docs/musicDS/170439_argande102_wind-on-microphone.ogg')
+        audio2, sr2 = load_audio('../docs/musicDS/401275_inspectorj_rain-moderate-c.ogg')
+        arr_1st_method_1 = process_audio(audio1, sr1, 'guzhov', net_model)
+        arr_2nd_method_1 = process_audio(audio1, sr1, 'palanisamy', net_model)
+        arr_1st_method_2 = process_audio(audio2, sr2, 'guzhov', net_model)
+        arr_2nd_method_2 = process_audio(audio2, sr2, 'palanisamy', net_model)
+        met1_1 = np.array([])
+        met1_2 = np.array([])
+        met2_1 = np.array([])
+        met2_2 = np.array([])
+        for n in range(11):
+            met1_1 = np.append(met1_1, np.linalg.norm(arr_1st_method_1[n] - arr_1st_method_1[n + 1]))
+            met1_1 = np.append(met1_1, np.linalg.norm(arr_1st_method_2[n] - arr_1st_method_2[n + 1]))
+            met1_2 = np.append(met1_2, np.linalg.norm(arr_1st_method_1[n] - arr_1st_method_2[n]))
+            met2_2 = np.append(met2_2, np.linalg.norm(arr_2nd_method_1[n] - arr_2nd_method_2[n]))
+            met2_1 = np.append(met2_1, np.linalg.norm(arr_2nd_method_1[n] - arr_2nd_method_1[n + 1]))
+            met2_1 = np.append(met2_1, np.linalg.norm(arr_2nd_method_2[n] - arr_2nd_method_2[n + 1]))
 
-    sheet_2 = book.create_sheet("1 метод, пары из разных записей", 0)
-    for i in range(0, len(met1_2)):
-        sheet_2.append([i+1, met1_2[i]])
-
-    sheet_3 = book.create_sheet("2 метод, пара из одной записи", 0)
-    for i in range(0, len(met2_1)):
-        sheet_3.append([i+1, met2_1[i]])
-
-    sheet_4 = book.create_sheet("2 метод, пара из разных записей", 0)
-    for i in range(0, len(met2_2)):
-        sheet_4.append([i+1, met2_2[i]])
-    book.save("results.xlsx")
-    display_results(met1_1, met1_2) ##первый метод
-    display_results(met2_1, met2_2) ##второй метод
+        book = openpyxl.Workbook()
+        sheet_1 = book.create_sheet(f"{net_model}_results", 0)
+        sheet_1.append(['guzhov, same'])
+        sheet_1.append(met1_1.tolist())
+        sheet_1.append(['guzhov, different'])
+        sheet_1.append(met1_2.tolist())
+        sheet_1.append(['palanisamy, same'])
+        sheet_1.append(met2_1.tolist())
+        sheet_1.append(['palanisamy, different'])
+        sheet_1.append(met2_2.tolist())
+        book.save(f"../docs/misc/{net_model}_results.xlsx")
+        display_results(met1_1, met1_2)
+        display_results(met2_1, met2_2)
+    else:
+        audio, sr = load_audio(args.audio)
+        process_audio(audio, sr, args.preproc, args.model, args.weights)

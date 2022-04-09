@@ -19,7 +19,8 @@ def display_results(same_pairs_distance, different_pairs_distance):
     plt.bar(different_pairs_distance, 3, color='r', width=0.05)
     plt.show()
 
-if __name__== "__main__":
+
+if __name__ == "__main__":
     same = np.random.ranf(10)
     print(type(same))
     print(same)
