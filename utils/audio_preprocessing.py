@@ -39,6 +39,9 @@ def preprocess_audio(audio, sr, type):
     """
     window_length = recalculate_from_ms_to_bins(WINDOW_SIZES, sr)
     hop_length = recalculate_from_ms_to_bins(HOP_SIZES, sr)
+    print(sr)
+    print(window_length)
+    print(hop_length)
     ch0 = calculate_melspectrogram(audio, sr, hop_length[0], window_length[0])
     if type == METHODS[0]:  # from https://arxiv.org/pdf/2004.07301.pdf and https://arxiv.org/pdf/2007.11154.pdf
         return np.dstack((ch0, ch0, ch0))
@@ -81,4 +84,5 @@ if __name__ == "__main__":
     else:
         a, sr = librosa.load(librosa.ex('trumpet'))
     res = preprocess_audio(a, sr, args.preproc)
-    display_data_portion(res)
+    display_data_portion(preprocess_audio(a, sr, args.preproc))
+    display_data_portion(preprocess_audio(a, sr, 'guzhov'))
