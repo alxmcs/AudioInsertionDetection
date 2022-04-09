@@ -79,7 +79,7 @@ def vector_gener(audio, preproc):
                                                                                                     "preprocessing "
                                                                                                     "method")
     args = parser.parse_args()
-    if preproc != False:
+    if preproc is not False:
         args.preproc = preproc
     if args.model:
         fem = FeatureExtractionModel(args.model, args.weights)
