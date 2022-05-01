@@ -3,6 +3,9 @@ import argparse
 import numpy as np
 import openpyxl
 import tensorflow as tf
+import time
+import pathlib
+from pathlib import Path
 from datetime import datetime
 from tensorflow.keras import models
 from tensorflow.keras.layers import Input
@@ -79,43 +82,62 @@ if __name__ == "__main__":
                                                                                                     "method")
     args = parser.parse_args()
 
-    # these two lines are needed to run inference on my dated gtx 1660 ti
-    physical_devices = tf.config.experimental.list_physical_devices('GPU')
-    tf.config.experimental.set_memory_growth(physical_devices[0], True)
+    # # these two lines are needed to run inference on my dated gtx 1660 ti
+    # physical_devices = tf.config.experimental.list_physical_devices('GPU')
+    # tf.config.experimental.set_memory_growth(physical_devices[0], True)
 
-    if args.research:
-        net_model = 'DenseNet'
-        audio1, sr1 = load_audio('../docs/musicDS/170439_argande102_wind-on-microphone.ogg')
-        audio2, sr2 = load_audio('../docs/musicDS/401275_inspectorj_rain-moderate-c.ogg')
-        arr_1st_method_1 = process_audio(audio1, sr1, 'guzhov', net_model)
-        arr_2nd_method_1 = process_audio(audio1, sr1, 'palanisamy', net_model)
-        arr_1st_method_2 = process_audio(audio2, sr2, 'guzhov', net_model)
-        arr_2nd_method_2 = process_audio(audio2, sr2, 'palanisamy', net_model)
-        met1_1 = np.array([])
-        met1_2 = np.array([])
-        met2_1 = np.array([])
-        met2_2 = np.array([])
-        for n in range(11):
-            met1_1 = np.append(met1_1, np.linalg.norm(arr_1st_method_1[n] - arr_1st_method_1[n + 1]))
-            met1_1 = np.append(met1_1, np.linalg.norm(arr_1st_method_2[n] - arr_1st_method_2[n + 1]))
-            met1_2 = np.append(met1_2, np.linalg.norm(arr_1st_method_1[n] - arr_1st_method_2[n]))
-            met2_2 = np.append(met2_2, np.linalg.norm(arr_2nd_method_1[n] - arr_2nd_method_2[n]))
-            met2_1 = np.append(met2_1, np.linalg.norm(arr_2nd_method_1[n] - arr_2nd_method_1[n + 1]))
-            met2_1 = np.append(met2_1, np.linalg.norm(arr_2nd_method_2[n] - arr_2nd_method_2[n + 1]))
+    # if args.research:
+    #     net_model = 'DenseNet'
+    #     audio1, sr1 = load_audio('../docs/musicDS/170439_argande102_wind-on-microphone.ogg')
+    #     audio2, sr2 = load_audio('../docs/musicDS/401275_inspectorj_rain-moderate-c.ogg')
+    #     arr_1st_method_1 = process_audio(audio1, sr1, 'guzhov', net_model)
+    #     arr_2nd_method_1 = process_audio(audio1, sr1, 'palanisamy', net_model)
+    #     arr_1st_method_2 = process_audio(audio2, sr2, 'guzhov', net_model)
+    #     arr_2nd_method_2 = process_audio(audio2, sr2, 'palanisamy', net_model)
+    #     met1_1 = np.array([])
+    #     met1_2 = np.array([])
+    #     met2_1 = np.array([])
+    #     met2_2 = np.array([])
+    #     for n in range(11):
+    #         met1_1 = np.append(met1_1, np.linalg.norm(arr_1st_method_1[n] - arr_1st_method_1[n + 1]))
+    #         met1_1 = np.append(met1_1, np.linalg.norm(arr_1st_method_2[n] - arr_1st_method_2[n + 1]))
+    #         met1_2 = np.append(met1_2, np.linalg.norm(arr_1st_method_1[n] - arr_1st_method_2[n]))
+    #         met2_2 = np.append(met2_2, np.linalg.norm(arr_2nd_method_1[n] - arr_2nd_method_2[n]))
+    #         met2_1 = np.append(met2_1, np.linalg.norm(arr_2nd_method_1[n] - arr_2nd_method_1[n + 1]))
+    #         met2_1 = np.append(met2_1, np.linalg.norm(arr_2nd_method_2[n] - arr_2nd_method_2[n + 1]))
 
-        book = openpyxl.Workbook()
-        sheet_1 = book.create_sheet(f"{net_model}_results", 0)
-        sheet_1.append(['guzhov, same'])
-        sheet_1.append(met1_1.tolist())
-        sheet_1.append(['guzhov, different'])
-        sheet_1.append(met1_2.tolist())
-        sheet_1.append(['palanisamy, same'])
-        sheet_1.append(met2_1.tolist())
-        sheet_1.append(['palanisamy, different'])
-        sheet_1.append(met2_2.tolist())
-        book.save(f"../docs/misc/{net_model}_results.xlsx")
-        display_results(met1_1, met1_2)
-        display_results(met2_1, met2_2)
-    else:
-        audio, sr = load_audio(args.audio)
-        process_audio(audio, sr, args.preproc, args.model, args.weights)
+    #     # book = openpyxl.Workbook()
+    #     # sheet_1 = book.create_sheet(f"{net_model}_results", 0)
+    #     # sheet_1.append(['guzhov, same'])
+    #     # sheet_1.append(met1_1.tolist())
+    #     # sheet_1.append(['guzhov, different'])
+    #     # sheet_1.append(met1_2.tolist())
+    #     # sheet_1.append(['palanisamy, same'])
+    #     # sheet_1.append(met2_1.tolist())
+    #     # sheet_1.append(['palanisamy, different'])
+    #     # sheet_1.append(met2_2.tolist())
+    #     # book.save(f"../docs/misc/{net_model}_results.xlsx")
+    #     # display_results(met1_1, met1_2)
+    #     # display_results(met2_1, met2_2)
+    # else:
+    #     audio, sr = load_audio(args.audio)
+    #     process_audio(audio, sr, args.preproc, args.model, args.weights)
+    audio1, sr1 = load_audio(Path(pathlib.Path.cwd(), 'docs', 'musicDS', '170439_argande102_wind-on-microphone.ogg'))
+    book = openpyxl.Workbook()
+    sheet_1 = book.create_sheet(f"Results_of_testing_different_models", 0)
+    sheet_1.append(list(['Метод предобработки', 'Модель нейросети', 'Среднее время обработки одного фрагмента фонограммы']))
+    for net_model in MODELS:
+        startTime = time.time()
+        process_audio(audio1, sr1, 'guzhov', net_model)
+        endTime = time.time()
+        totalTime = endTime - startTime
+        print('Время выполнения для модели ' + net_model + ' методом "Guzhov et al." равно: ' + str(totalTime))
+        sheet_1.append(list(['Guzhov et al.', net_model, totalTime]))
+        startTime = time.time()
+        process_audio(audio1, sr1, 'palanisamy', net_model)
+        endTime = time.time()
+        totalTime = endTime - startTime
+        print('Время выполнения для модели ' + net_model + ' методом "Palanisamy et al." равно: ' + str(totalTime))
+        sheet_1.append(list(['Palanisamy et al.', net_model, totalTime]))
+    book.save(Path(pathlib.Path.cwd(), 'docs', 'misc', 'Results_of_testing_different_models.xlsx'))
+            
