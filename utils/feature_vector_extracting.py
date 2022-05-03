@@ -124,20 +124,20 @@ if __name__ == "__main__":
     #     process_audio(audio, sr, args.preproc, args.model, args.weights)
     audio1, sr1 = load_audio(Path(pathlib.Path.cwd(), 'docs', 'musicDS', '170439_argande102_wind-on-microphone.ogg'))
     book = openpyxl.Workbook()
-    sheet_1 = book.create_sheet(f"Results_of_testing_different_models", 0)
-    sheet_1.append(list(['Метод предобработки', 'Модель нейросети', 'Среднее время обработки одного фрагмента фонограммы']))
+    sheet_1 = book.create_sheet("Results_of_testing_different_models", 0)
+    sheet_1.append(['Метод предобработки', 'Модель нейросети', 'Среднее время обработки одного фрагмента фонограммы'])
     for net_model in MODELS:
         startTime = time.time()
         process_audio(audio1, sr1, 'guzhov', net_model)
         endTime = time.time()
         totalTime = endTime - startTime
         print('Время выполнения для модели ' + net_model + ' методом "Guzhov et al." равно: ' + str(totalTime))
-        sheet_1.append(list(['Guzhov et al.', net_model, totalTime]))
+        sheet_1.append(['Guzhov et al.', net_model, totalTime])
         startTime = time.time()
         process_audio(audio1, sr1, 'palanisamy', net_model)
         endTime = time.time()
         totalTime = endTime - startTime
         print('Время выполнения для модели ' + net_model + ' методом "Palanisamy et al." равно: ' + str(totalTime))
-        sheet_1.append(list(['Palanisamy et al.', net_model, totalTime]))
+        sheet_1.append(['Palanisamy et al.', net_model, totalTime])
     book.save(Path(pathlib.Path.cwd(), 'docs', 'misc', 'Results_of_testing_different_models.xlsx'))
             
