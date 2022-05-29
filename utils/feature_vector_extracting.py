@@ -139,7 +139,7 @@ def time_for_diff_models(audios, trek):
             t2.append(totalTime)
     t1.append(['Guzhov et al.', net_model, totalTime])
     t2.append(['Palanisamy et al.', net_model, totalTime])
-    book.save(f'{trek}'+f'\Results_of_testing_different_models.xlsx')
+    book.save(f'{trek}'+'\Results_of_testing_different_models.xlsx')
 
 
 
