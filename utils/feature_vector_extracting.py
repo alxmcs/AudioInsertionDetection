@@ -124,30 +124,22 @@ def time_for_diff_models():
 
 
 if __name__ == "__main__":
-    # parser = argparse.ArgumentParser(description="feature vector extracting script")
-    # parser.add_argument("-r", dest="research", action='store_true', help="runs preset research if provided")
-    # parser.add_argument("-m", dest="model", type=str, choices=MODELS, help="name of the model to use")
-    # parser.add_argument("-w", dest="weights", type=str, default='imagenet', help="path to the model weights")
-    # parser.add_argument("-a", dest="audio", type=str, help="path to an audio file")
-    # parser.add_argument("-p", dest="preproc", type=str, choices=METHODS, default='palanisamy', help="name of the "
-    #                                                                                                 "preprocessing "
-    #                                                                                                 "method")
-    # args = parser.parse_args()
-
-    #these two lines are needed to run inference on my dated gtx 1660 ti
-    #physical_devices = tf.config.experimental.list_physical_devices('GPU')
-    #tf.config.experimental.set_memory_growth(physical_devices[0], True)
-    audio, sr = []
-    dir = Path(Path.cwd(), 'docs', 'musicDS')
-    files = listdir(dir)
-    book = openpyxl.Workbook()
-    sheet_1 = book.create_sheet("Results_of_testing_different_models", 0)
-    sheet_1.append(['Метод предобработки', 'Пара аудиозаписей', 'Модель нейросети', 'Среднее время обработки одного фрагмента фонограммы'])
-    for ind in len(files):
-        audio[ind], sr[ind] = load_audio(Path(Path.cwd(), 'docs', 'musicDS', f'{files[ind]}'))
+    SETTINGS = 'C:\\Users\\stron\\Documents\\GitHub\\docs\\params\\main_args.json'
     
-    audio1, sr1 = load_audio(Path(Path.cwd(), 'docs', 'musicDS', '170439_argande102_wind-on-microphone.ogg'))
-    audio2, sr2 = load_audio(Path(Path.cwd(), 'docs', 'musicDS', '401275_inspectorj_rain-moderate-c.ogg'))
+    with open(SETTINGS) as json_file:
+        settings = json.load(json_file)
+    time_for_diff_models(settings["audios"], settings["trek"])
+    # audio, sr = []
+    # dir = Path(Path.cwd(), 'docs', 'musicDS')
+    # files = listdir(dir)
+    # book = openpyxl.Workbook()
+    # sheet_1 = book.create_sheet("Results_of_testing_different_models", 0)
+    # sheet_1.append(['Метод предобработки', 'Пара аудиозаписей', 'Модель нейросети', 'Среднее время обработки одного фрагмента фонограммы'])
+    # for ind in len(files):
+    #     audio[ind], sr[ind] = load_audio(Path(Path.cwd(), 'docs', 'musicDS', f'{files[ind]}'))
+    
+    audio1, sr1 = load_audio(f'{settings["audios"][0]}')
+    audio2, sr2 = load_audio(f'{settings["audios"][1]}')
     for net_model in MODELS:
         norm_calc(net_model, audio1, sr1, audio2, sr2)
         startTime = time.time()
