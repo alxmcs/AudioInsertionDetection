@@ -1,3 +1,4 @@
+import json
 import librosa
 import argparse
 import numpy as np
@@ -128,13 +129,12 @@ if __name__ == "__main__":
     
     with open(SETTINGS) as json_file:
         settings = json.load(json_file)
-    time_for_diff_models(settings["audios"], settings["trek"])
     # audio, sr = []
     # dir = Path(Path.cwd(), 'docs', 'musicDS')
     # files = listdir(dir)
-    # book = openpyxl.Workbook()
-    # sheet_1 = book.create_sheet("Results_of_testing_different_models", 0)
-    # sheet_1.append(['Метод предобработки', 'Пара аудиозаписей', 'Модель нейросети', 'Среднее время обработки одного фрагмента фонограммы'])
+    book = openpyxl.Workbook()
+    sheet_1 = book.create_sheet("Results_of_testing_different_models", 0)
+    sheet_1.append(['Метод предобработки', 'Пара аудиозаписей', 'Модель нейросети', 'Среднее время обработки одного фрагмента фонограммы'])
     # for ind in len(files):
     #     audio[ind], sr[ind] = load_audio(Path(Path.cwd(), 'docs', 'musicDS', f'{files[ind]}'))
     
